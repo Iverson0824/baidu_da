@@ -23,36 +23,72 @@ async def scrape_baidu_hot_search(retries = 5):
                         # Get HTML content
                         html_content = await response.text()
 
+                        # Save HTML for debugging
+                        with open("debug_response.html", "w", encoding="utf-8") as f:
+                            f.write(html_content)
+
                         # Parse HTML content into BeautifulSoup object
                         soup = BeautifulSoup(html_content, 'html.parser')
                         # Use CSS selector to find elements with specific tag and contents
                         items = soup.select(".category-wrap_iQLoo")
-                        print(f'Found {len(items)} hot search topics.')
+                        if not items:
+                            # Use mobile version
+                            items = soup.select(".c-text-item")
+                            print(f'Found {len(items)} hot search topics.')
 
-                        hot_search_list = []
+                            hot_search_list = []
 
-                        # Generating rank index for each item and start count from 1
-                        for rank_idx, item in enumerate(items, 1):
+                            # Generating rank index for each item and start count from 1
+                            for rank_idx, item in enumerate(items, 1):
 
-                            # Get hot index
-                            hot_idx_el = item.select_one(".hot-index_1Bl1a")
-                            hot_idx = hot_idx_el.get_text(strip=True) if hot_idx_el else '0'
+                                # Get hot index
+                                hot_idx_el = item.select_one(".hot-index_1Bl1a")
+                                hot_idx = hot_idx_el.get_text(strip=True) if hot_idx_el else '0'
 
-                            # Get title
-                            title_item_el = item.select_one(".c-single-text-ellipsis")
-                            title = title_item_el.get_text(strip=True) if title_item_el else 'N/A'
+                                # Get title
+                                title_item_el = item.select_one(".item-word")
+                                title = title_item_el.get_text(strip=True) if title_item_el else 'N/A'
 
-                            # Get hot search link
-                            link = item.select_one("a")["href"] if item.select_one("a") else 'N/A'
+                                # Get hot search link
+                                link = item.get("href", "N/A")
 
-                            hot_search_list.append({
-                                "rank_index": rank_idx,
-                                "title": title,
-                                "hot_index": hot_idx,
-                                "link": link
-                            })
-                        print(f'Parsed {len(hot_search_list)} hot search topics.')
-                        return hot_search_list
+                                hot_search_list.append({
+                                    "rank_index": rank_idx,
+                                    "title": title,
+                                    "hot_index": hot_idx,
+                                    "link": link
+                                })
+                            print(f'Parsed {len(hot_search_list)} hot search topics.')
+                            return hot_search_list
+
+                        else:
+                            # Use desktop version
+                            print(f'Found {len(items)} hot search topics.')
+
+                            hot_search_list = []
+
+                            # Generating rank index for each item and start count from 1
+                            for rank_idx, item in enumerate(items, 1):
+
+                                # Get hot index
+                                hot_idx_el = item.select_one(".hot-index_1Bl1a")
+                                hot_idx = hot_idx_el.get_text(strip=True) if hot_idx_el else '0'
+
+                                # Get title
+                                title_item_el = item.select_one(".c-single-text-ellipsis")
+                                title = title_item_el.get_text(strip=True) if title_item_el else 'N/A'
+
+                                # Get hot search link
+                                link = item.select_one("a")["href"] if item.select_one("a") else 'N/A'
+
+                                hot_search_list.append({
+                                    "rank_index": rank_idx,
+                                    "title": title,
+                                    "hot_index": hot_idx,
+                                    "link": link
+                                })
+                            print(f'Parsed {len(hot_search_list)} hot search topics.')
+                            return hot_search_list
 
                     
                     elif response.status in [403, 429, 503]:
