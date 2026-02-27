@@ -1,0 +1,15 @@
+# Virtual environment
+venv/
+
+# Config with passwords
+config/db_config.ini
+
+# Python cache
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store
+
+# Debug files
+debug*.html
