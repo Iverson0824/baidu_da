@@ -6,14 +6,14 @@ from utils.disguise_utils import get_random_headers
 from utils.mysql_helper import MysqlHelper
 
 # Scrap Baidu Hot Search
-async def scrape_baidu_hot_search(retries = 3):
+async def scrape_baidu_hot_search(retries = 5):
     url = "https://top.baidu.com/board?tab=realtime"
 
     for attempt in range(retries):
         headers = get_random_headers()
         try:
             # Wait for 1-3 sec to act like human
-            await asyncio.sleep(random.uniform(1,3))
+            await asyncio.sleep(random.uniform(3,6) if attempt == 0 else random.uniform(2,5))
             # Use aiohttp to fetch data
             async with aiohttp.ClientSession() as session:
                 async with session.get(url, headers = headers, timeout = aiohttp.ClientTimeout(total=10)) as response:
@@ -69,7 +69,7 @@ async def scrape_baidu_hot_search(retries = 3):
     
         except Exception as e:
             wait_time = (2 ** (attempt + 1)) + random.uniform(1,3)
-            print(f'Error: {e}. Backing off for {wait_time:.2f}s')
+            print(f'Error ({type(e).__name__}): {e}. Backing off for {wait_time:.2f}s')
             await asyncio.sleep(wait_time)
     return None
 
