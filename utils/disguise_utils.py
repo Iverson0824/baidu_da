@@ -1,11 +1,12 @@
 from fake_useragent import UserAgent
-
-ua = UserAgent()
-
-def get_random_headers():
-    # Generate random browser-like headers
-    return{
-        "User-Agent": ua.random,
+class DisguiseUtils:
+    def __init__(self):
+        self.ua = UserAgent()
+    
+    def get_random_headers(self):
+        # Generate random browser-like headers
+        return{
+        "User-Agent": self.ua.random,
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.5",
         "Referer": "https://www.google.com/",
@@ -16,6 +17,6 @@ def get_random_headers():
         "Upgrade-Insecure-Requests": "1"
     }
 
-if __name__ =='__main__':
-    print(get_random_headers())
-    
+# Backward compatibility
+_default_disguise_utils = DisguiseUtils()
+get_random_headers = _default_disguise_utils.get_random_headers
