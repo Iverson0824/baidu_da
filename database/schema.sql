@@ -60,3 +60,19 @@ CREATE TABLE IF NOT EXISTS baidu_hot_search (
     created_at DATE NOT NULL,
     UNIQUE KEY `unique_title_day` (title, created_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+
+DROP TABLE IF EXISTS douban_top250;
+
+CREATE TABLE IF NOT EXISTS douban_top250 (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    rank_idx INT NOT NULL,
+    title VARCHAR(200) NOT NULL,
+    rating DECIMAL(2, 1) NOT NULL,
+    rating_count INT DEFAULT 0,
+    quote VARCHAR(500),
+    link VARCHAR(500) NOT NULL,
+    director VARCHAR(200),
+    year SMALLINT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_rank (rank_idx)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
