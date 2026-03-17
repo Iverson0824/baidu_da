@@ -65,6 +65,42 @@ print(f'Outliers: {len(outliers)}')
 if len(outliers) > 0:
     print(outliers[['rank_idx', 'title', 'rating']])
 
+# join cast data from movie_cast junction table
+cast_query = """
+    SELECT d.rank_idx, GROUP_CONCAT(mc.actor_name ORDER BY mc.id SEPARATOR ', ') AS cast_members
+    FROM movie_cast mc
+    JOIN douban_top250 d ON mc.movie_id = d.id
+    GROUP BY d.rank_idx
+"""
+cast_df = pd.read_sql(cast_query, engine)
+cast_df = cast_df.convert_dtypes(dtype_backend='pyarrow')
+df = df.merge(cast_df, on='rank_idx', how='left')
+print(f'Cast data merged: {df["cast_members"].notna().sum()} movies have cast info')
+
+# join genre data from movie_genres junction table
+genre_query = """
+    SELECT d.rank_idx, GROUP_CONCAT(mg.genre ORDER BY mg.id SEPARATOR ', ') AS genres
+    FROM movie_genres mg
+    JOIN douban_top250 d ON mg.movie_id = d.id
+    GROUP BY d.rank_idx
+"""
+genre_df = pd.read_sql(genre_query, engine)
+genre_df = genre_df.convert_dtypes(dtype_backend='pyarrow')
+df = df.merge(genre_df, on='rank_idx', how='left')
+
+# join country data from movie_countries junction table
+country_query = """
+    SELECT d.rank_idx, GROUP_CONCAT(mc.country ORDER BY mc.id SEPARATOR ', ') AS countries
+    FROM movie_countries mc
+    JOIN douban_top250 d ON mc.movie_id = d.id
+    GROUP BY d.rank_idx
+"""
+country_df = pd.read_sql(country_query, engine)
+country_df = country_df.convert_dtypes(dtype_backend='pyarrow')
+df = df.merge(country_df, on='rank_idx', how='left')
+
+print(f'Final columns: {df.columns.tolist()}')
+
 # save cleaned dataset
 df.to_parquet('data/douban_top250_cleaned.parquet')
 df.to_csv('data/douban_top250_cleaned.csv', index=False)

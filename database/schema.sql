@@ -76,3 +76,33 @@ CREATE TABLE IF NOT EXISTS douban_top250 (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY unique_rank (rank_idx)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+
+drop table if exists movie_genres;
+
+CREATE TABLE IF NOT EXISTS movie_genres (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    movie_id INT NOT NULL,
+    genre VARCHAR(50) NOT NULL,
+    FOREIGN KEY (movie_id) REFERENCES douban_top250 (id) ON DELETE CASCADE,
+    UNIQUE KEY unique_movie_genre (movie_id, genre)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+
+drop table if exists movie_countries;
+
+CREATE TABLE IF NOT EXISTS movie_countries (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    movie_id INT NOT NULL,
+    country VARCHAR(100) NOT NULL,
+    FOREIGN KEY (movie_id) REFERENCES douban_top250 (id) ON DELETE CASCADE,
+    UNIQUE KEY unique_movie_country (movie_id, country)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+
+DROP TABLE IF EXISTS movie_cast;
+
+CREATE TABLE IF NOT EXISTS movie_cast (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    movie_id INT NOT NULL,
+    actor_name VARCHAR(200) NOT NULL,
+    FOREIGN KEY (movie_id) REFERENCES douban_top250 (id) ON DELETE CASCADE,
+    UNIQUE KEY unique_movie_actor (movie_id, actor_name)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;

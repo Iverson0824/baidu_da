@@ -2,6 +2,7 @@ import os
 import re
 from bs4 import BeautifulSoup
 from utils.mysql_helper import MysqlHelper
+import unicodedata
 
 class DoubanParser:
     def __init__(self, data_dir='data/db_top250_raw'):
@@ -111,11 +112,87 @@ class DoubanParser:
                     for country in movie['country'].strip().split(' '):
                         cursor.execute(country_query, (movie_id, country))
         print(f'Successfully inserted {len(movies)} movies into the database.')
+
+# Cast extraction
+
+    @staticmethod
+    def is_chinese(char):
+        """Check if a character is a CJK ideograph."""
+        return unicodedata.category(char).startswith('Lo')
+
+    @staticmethod
+    def extract_chinese_name(full_name):
+        chinese_parts = []
+        for char in full_name:
+            if DoubanParser.is_chinese(char) or char in '·・':
+                chinese_parts.append(char)
+            elif chinese_parts:
+                break
+        return ''.join(chinese_parts).strip('·・ ')
+
+    def parse_detail_page(self, html):
+        soup = BeautifulSoup(html, 'html.parser')
+        actors = []
+
+        for a_tag in soup.find_all('a', rel='v:starring'):
+            full_name = a_tag.get_text(strip=True)
+            chinese_name = self.extract_chinese_name(full_name)
+            if chinese_name:
+                actors.append(chinese_name)
+
+        return actors
+
+    def parse_all_details(self, detail_dir='data/db_detail_raw'):
+        all_cast = {}
+        for filename in os.listdir(detail_dir):
+            if not filename.endswith('.html'):
+                continue
+            subject_id = filename.replace('.html', '')
+            filepath = os.path.join(detail_dir, filename)
+            with open(filepath, 'r', encoding='utf-8') as f:
+                html = f.read()
+            actors = self.parse_detail_page(html)
+            all_cast[subject_id] = actors
+            print(f'  {subject_id}: {len(actors)} actors')
+
+        print(f'Parsed {len(all_cast)} detail pages')
+        return all_cast
+
+    def insert_cast(self, all_cast):
+        mysql_helper = MysqlHelper()
+        cast_query = """
+            INSERT IGNORE INTO movie_cast (movie_id, actor_name)
+            VALUES(%s, %s)
+        """
+
+        # Build subject_id -> movie_id mapping
+        rows = mysql_helper.select_all('SELECT id, link FROM douban_top250')
+        url_to_id = {}
+        for row in rows:
+            match = re.search(r'/subject/(\d+)', row['link'])
+            if match:
+                url_to_id[match.group(1)] = row['id']
+
+        total = 0
+        with mysql_helper.transaction() as cursor:
+            for subject_id, actors in all_cast.items():
+                movie_id = url_to_id.get(subject_id)
+                if not movie_id:
+                    print(f'  WARNING: no DB match for subject {subject_id}')
+                    continue
+                for actor in actors:
+                    cursor.execute(cast_query, (movie_id, actor))
+                    total += 1
+
+        print(f'Inserted {total} cast entries into movie_cast table.')
     
 if __name__ == '__main__':
     parser = DoubanParser()
     movies = parser.parse_all()
     parser.to_db(movies)
+
+    all_cast = parser.parse_all_details()
+    parser.insert_cast(all_cast)
 
     for m in movies[:3]:
         print(m)

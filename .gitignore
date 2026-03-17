@@ -18,4 +18,8 @@ baidu_hot_search_summary.md
 
 knowledge_library_mysql_python.md
 
+# Raw HTML cache (63MB, regenerable via scraper)
+data/db_detail_raw/
 
+# Claude Code
+.claude/
